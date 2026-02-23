@@ -1,5 +1,9 @@
 use anchor_lang::prelude::*;
 
+
+pub mod state;
+use state::escrow::Escrow;
+
 declare_id!("8YaictS2mS1cUFR4dqk84Lz5QYwRBc2vxbwxEFH2EK6M");
 
 #[program]
@@ -9,6 +13,8 @@ pub mod escrow_program {
     pub fn initialize(ctx: Context<Initialize>) -> Result<()> {
         msg!("Greetings from: {:?}", ctx.program_id);
         Ok(())
+        
+        
     }
 }
 
