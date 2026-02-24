@@ -1,12 +1,14 @@
 use anchor_lang::prelude::*;
 
-pub mod state;
-use state::escrow::Escrow;
+ 
+use crate::state::escrow::Escrow;
 
 use anchor_spl::{
     associated_token::AssociatedToken,
     token_interface::{transfer_checked, Mint, TokenAccount, TokenInterface, TransferChecked},
 };
+
+
 
 #[derive(Accounts)]
 #[instruction(seed: u64)]
@@ -26,7 +28,7 @@ pub struct Make<'info>{
    )]
    pub maker_ata : InterfaceAccount<'info,TokenAccount>,
 
-   pub token_program : Program<'info,TokenInterface>,
+   pub token_program : Interface<'info,TokenInterface>,
    pub system_program : Program<'info,System>,
   pub associated_token_program : Program<'info,AssociatedToken>,
 
@@ -57,7 +59,7 @@ impl<'info> Make<'info>{
             maker : self.maker.key(),
             mint_nft : self.nft_mint.key(),
             price,
-            bump
+            bump : bumps.escrow,
         });
         let cpi_accounts = TransferChecked {
             from: self.maker_ata.to_account_info(),
