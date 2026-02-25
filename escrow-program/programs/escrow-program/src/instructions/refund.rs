@@ -16,19 +16,15 @@ pub struct Refund<'info>{
     #[account(mut)]
     pub maker : Signer<'info>,
     #[account(
+        mut,
         associated_token::mint = nft_mint,
         associated_token::authority = escrow,
         token::token_program = token_program
     )]
     pub vault : InterfaceAccount<'info,TokenAccount>,
     #[account(
-        mut,
-        seeds = [b"escrow", maker.key().as_ref(), seed.to_le_bytes().as_ref()],
-        bump = escrow.bump,
-    )]
-    #[account(
-    mint::decimals = 0,
-    mint::token_program = token_program
+        mint::decimals = 0,
+        mint::token_program = token_program
     )]
     pub nft_mint : InterfaceAccount<'info,Mint>,
     #[account(
@@ -39,6 +35,7 @@ pub struct Refund<'info>{
     )]
     pub escrow : Account<'info,Escrow>,
     #[account(
+        mut,
         associated_token::mint = nft_mint,
         associated_token::authority = maker,
         token::token_program = token_program
