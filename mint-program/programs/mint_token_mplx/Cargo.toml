@@ -1,5 +1,5 @@
 [package]
-name = "mint-program"
+name = "mint_token_mplx"
 version = "0.1.0"
 description = "Created with Anchor"
 edition = "2021"
@@ -21,7 +21,10 @@ custom-panic = []
 
 
 [dependencies]
-anchor-lang = "0.32.1"
+anchor-lang = { version = "0.32.1", features = ["init-if-needed"] }
+mpl-core = { version = "0.11.1", features = ["anchor"] }
+indexmap = "=2.13.0"
+rmp-serde = "=1.3.0"
 
 
 [lints.rust]
