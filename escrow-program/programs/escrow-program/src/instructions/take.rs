@@ -2,7 +2,7 @@ use anchor_lang::prelude::*;
 use anchor_lang::system_program::{transfer, Transfer};
 
 use crate::state::escrow::Escrow;
-
+use crate::errors::EscrowError;
 use anchor_spl::{
     associated_token::AssociatedToken,
     token_interface::{
@@ -47,6 +47,16 @@ pub struct Take<'info> {
 
 impl<'info> Take<'info> {
     pub fn take(&mut self, seed: u64) -> Result<()> {
+
+            let pay_ctx = CpiContext::new(
+            self.system_program.to_account_info(),
+            Transfer {
+                from: self.taker.to_account_info(),
+                to: self.maker.to_account_info(),
+            },
+        );
+
+        transfer(pay_ctx, self.escrow.price)?;
         let cpi_accounts = TransferChecked {
             from: self.vault.to_account_info(),
             to: self.taker_ata.to_account_info(),
@@ -68,15 +78,7 @@ impl<'info> Take<'info> {
 
         transfer_checked(cpi_ctx, 1, 0)?;
 
-        //tranfer money back to maker
-        let fee_transfer_cpi_context = CpiContext::new(
-            self.system_program.to_account_info(),
-            Transfer {
-                from: self.taker.to_account_info(),
-                to: self.maker.to_account_info(),
-            },
-        );
-        transfer(fee_transfer_cpi_context, self.escrow.price)?;
+       
 
         let close_accounts = CloseAccount {
             account: self.vault.to_account_info(),

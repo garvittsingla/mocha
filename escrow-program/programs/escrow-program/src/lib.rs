@@ -5,6 +5,10 @@ pub mod state;
 pub mod instructions;
 use instructions::*;
 
+pub mod errors;
+
+
+
 declare_id!("8YaictS2mS1cUFR4dqk84Lz5QYwRBc2vxbwxEFH2EK6M");
 
 #[program]
