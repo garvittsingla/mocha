@@ -1,0 +1,3 @@
+[submodule "espresso-protocol"]
+	path = espresso-protocol
+	url = git@github.com:ChubbyChipmunk77/espresso-protocol.git
