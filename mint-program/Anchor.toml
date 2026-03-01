@@ -12,7 +12,7 @@ mint_program = "CZD1NPbV6SM6iQkdgL4QYS8DHBF53gWC6b7uSaKyf8c"
 url = "https://api.apr.dev"
 
 [provider]
-cluster = "localnet"
+cluster = "devnet"
 wallet = "~/.config/solana/id.json"
 
 [scripts]

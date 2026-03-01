@@ -3,6 +3,12 @@
 
 ## [Overall architectural diagram](https://lucid.app/lucidspark/dbc5f3e4-ae17-4836-8f15-e7ede59fa753/edit?page=0_0#)
 
+
+## Escrow program 
+```9vBu94tzetx2CzKC8quL6yYjnqHs4JK6QM5f9oeY6fyC```
+
+## Mint program
+```74akLWMSU5RsRaHQMQLKaTx8r5b58BgJ1LJV2oAefC19```
 Team Details 
 - Garvit Singla
 (discord: garvittsingla, github:garvittsingla, mail:garvitsingla4751@gmail.com)
