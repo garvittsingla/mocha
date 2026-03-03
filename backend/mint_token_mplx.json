@@ -1,0 +1,629 @@
+{
+  "address": "HprKADnzCJ6fCHbk3uATgZymkio83w1qRuJWaK9LYtmc",
+  "metadata": {
+    "name": "mint_token_mplx",
+    "version": "0.1.0",
+    "spec": "0.1.0",
+    "description": "Created with Anchor"
+  },
+  "instructions": [
+    {
+      "name": "create_collection",
+      "discriminator": [
+        156,
+        251,
+        92,
+        54,
+        233,
+        2,
+        16,
+        82
+      ],
+      "accounts": [
+        {
+          "name": "creator",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "collection",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "whitelisted_creators",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  119,
+                  104,
+                  105,
+                  116,
+                  101,
+                  108,
+                  105,
+                  115,
+                  116
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "collection_authority",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  108,
+                  108,
+                  101,
+                  99,
+                  116,
+                  105,
+                  111,
+                  110,
+                  95,
+                  97,
+                  117,
+                  116,
+                  104,
+                  111,
+                  114,
+                  105,
+                  116,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "collection"
+              }
+            ]
+          }
+        },
+        {
+          "name": "core_program",
+          "address": "CoREENxT6tW1HoK8ypY1SxRMZTcVPm7R94rH4PZNhX7d"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "args",
+          "type": {
+            "defined": {
+              "name": "CreateCollectionArgs"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "freeze_nft",
+      "discriminator": [
+        138,
+        89,
+        228,
+        134,
+        233,
+        179,
+        225,
+        209
+      ],
+      "accounts": [
+        {
+          "name": "payer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "asset",
+          "writable": true
+        },
+        {
+          "name": "collection",
+          "writable": true
+        },
+        {
+          "name": "collection_authority",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  108,
+                  108,
+                  101,
+                  99,
+                  116,
+                  105,
+                  111,
+                  110,
+                  95,
+                  97,
+                  117,
+                  116,
+                  104,
+                  111,
+                  114,
+                  105,
+                  116,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "collection"
+              }
+            ]
+          }
+        },
+        {
+          "name": "core_program",
+          "address": "CoREENxT6tW1HoK8ypY1SxRMZTcVPm7R94rH4PZNhX7d"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "mint_nft",
+      "discriminator": [
+        211,
+        57,
+        6,
+        167,
+        15,
+        219,
+        35,
+        251
+      ],
+      "accounts": [
+        {
+          "name": "minter",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "asset",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "collection",
+          "writable": true
+        },
+        {
+          "name": "collection_authority",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  108,
+                  108,
+                  101,
+                  99,
+                  116,
+                  105,
+                  111,
+                  110,
+                  95,
+                  97,
+                  117,
+                  116,
+                  104,
+                  111,
+                  114,
+                  105,
+                  116,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "collection"
+              }
+            ]
+          }
+        },
+        {
+          "name": "core_program",
+          "address": "CoREENxT6tW1HoK8ypY1SxRMZTcVPm7R94rH4PZNhX7d"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "thaw_nft",
+      "discriminator": [
+        92,
+        44,
+        210,
+        187,
+        172,
+        6,
+        64,
+        183
+      ],
+      "accounts": [
+        {
+          "name": "payer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "collection",
+          "writable": true
+        },
+        {
+          "name": "collection_authority",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  108,
+                  108,
+                  101,
+                  99,
+                  116,
+                  105,
+                  111,
+                  110,
+                  95,
+                  97,
+                  117,
+                  116,
+                  104,
+                  111,
+                  114,
+                  105,
+                  116,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "collection"
+              }
+            ]
+          }
+        },
+        {
+          "name": "asset",
+          "writable": true
+        },
+        {
+          "name": "core_program",
+          "address": "CoREENxT6tW1HoK8ypY1SxRMZTcVPm7R94rH4PZNhX7d"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "update_nft",
+      "discriminator": [
+        97,
+        5,
+        62,
+        85,
+        23,
+        92,
+        96,
+        25
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "docs": [
+            "The collection creator who has authority to update"
+          ],
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "asset",
+          "docs": [
+            "The NFT asset to update"
+          ],
+          "writable": true
+        },
+        {
+          "name": "collection",
+          "docs": [
+            "The collection this NFT belongs to"
+          ],
+          "writable": true
+        },
+        {
+          "name": "collection_authority",
+          "docs": [
+            "The PDA that acts as the update authority for all NFTs in this collection"
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  108,
+                  108,
+                  101,
+                  99,
+                  116,
+                  105,
+                  111,
+                  110,
+                  95,
+                  97,
+                  117,
+                  116,
+                  104,
+                  111,
+                  114,
+                  105,
+                  116,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "collection"
+              }
+            ]
+          }
+        },
+        {
+          "name": "core_program",
+          "docs": [
+            "Metaplex Core program"
+          ],
+          "address": "CoREENxT6tW1HoK8ypY1SxRMZTcVPm7R94rH4PZNhX7d"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "new_name",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "whitelist_creator",
+      "discriminator": [
+        241,
+        102,
+        153,
+        114,
+        164,
+        18,
+        35,
+        214
+      ],
+      "accounts": [
+        {
+          "name": "payer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "creator",
+          "docs": [
+            "CHECK should be a keypair"
+          ]
+        },
+        {
+          "name": "whitelisted_creators",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  119,
+                  104,
+                  105,
+                  116,
+                  101,
+                  108,
+                  105,
+                  115,
+                  116
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "this_program",
+          "address": "HprKADnzCJ6fCHbk3uATgZymkio83w1qRuJWaK9LYtmc"
+        },
+        {
+          "name": "program_data"
+        }
+      ],
+      "args": []
+    }
+  ],
+  "accounts": [
+    {
+      "name": "CollectionAuthority",
+      "discriminator": [
+        209,
+        221,
+        189,
+        233,
+        183,
+        32,
+        247,
+        91
+      ]
+    },
+    {
+      "name": "WhitelistedCreators",
+      "discriminator": [
+        114,
+        80,
+        54,
+        82,
+        74,
+        237,
+        171,
+        110
+      ]
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "CreatorListFull",
+      "msg": "The creator list is full."
+    },
+    {
+      "code": 6001,
+      "name": "CreatorAlreadyWhitelisted",
+      "msg": "The creator is already in the list."
+    },
+    {
+      "code": 6002,
+      "name": "NotAuthorized",
+      "msg": "The payer is not the program's upgrade authority."
+    },
+    {
+      "code": 6003,
+      "name": "CollectionAlreadyInitialized",
+      "msg": "The collection has already been initialized."
+    },
+    {
+      "code": 6004,
+      "name": "AssetAlreadyInitialized",
+      "msg": "The asset has already been initialized."
+    },
+    {
+      "code": 6005,
+      "name": "CollectionNotInitialized",
+      "msg": "The collection is not initialized."
+    },
+    {
+      "code": 6006,
+      "name": "InvalidCollection",
+      "msg": "The collection is invalid."
+    }
+  ],
+  "types": [
+    {
+      "name": "CollectionAuthority",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "creator",
+            "type": "pubkey"
+          },
+          {
+            "name": "collection",
+            "type": "pubkey"
+          },
+          {
+            "name": "nft_name",
+            "type": "string"
+          },
+          {
+            "name": "nft_uri",
+            "type": "string"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "CreateCollectionArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "name",
+            "type": "string"
+          },
+          {
+            "name": "uri",
+            "type": "string"
+          },
+          {
+            "name": "nft_name",
+            "type": "string"
+          },
+          {
+            "name": "nft_uri",
+            "type": "string"
+          }
+        ]
+      }
+    },
+    {
+      "name": "WhitelistedCreators",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "creators",
+            "type": {
+              "array": [
+                "pubkey",
+                10
+              ]
+            }
+          },
+          {
+            "name": "num_creators",
+            "type": "u8"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    }
+  ]
+}
