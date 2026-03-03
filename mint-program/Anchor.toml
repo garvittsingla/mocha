@@ -6,7 +6,7 @@ resolution = true
 skip-lint = false
 
 [programs.localnet]
-mint_program = "8r1y3F7F7RVfRUNeh6tA7MLDrCdCKZL6Y2GYozqa81WL"
+mint_program = "CZD1NPbV6SM6iQkdgL4QYS8DHBF53gWC6b7uSaKyf8c"
 
 [registry]
 url = "https://api.apr.dev"
@@ -16,4 +16,4 @@ cluster = "devnet"
 wallet = "~/.config/solana/id.json"
 
 [scripts]
-test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 \"tests/**/*.ts\""
+test = "bash scripts/run-tests.sh"

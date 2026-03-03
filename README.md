@@ -5,10 +5,11 @@
 
 
 ## Escrow program 
-```8YaictS2mS1cUFR4dqk84Lz5QYwRBc2vxbwxEFH2EK6M```
+```9vBu94tzetx2CzKC8quL6yYjnqHs4JK6QM5f9oeY6fyC```
 
 ## Mint program
-```8r1y3F7F7RVfRUNeh6tA7MLDrCdCKZL6Y2GYozqa81WL```
+```74akLWMSU5RsRaHQMQLKaTx8r5b58BgJ1LJV2oAefC19```
+
 Team Details 
 - Garvit Singla
 (discord: garvittsingla, github:garvittsingla, mail:garvitsingla4751@gmail.com)
