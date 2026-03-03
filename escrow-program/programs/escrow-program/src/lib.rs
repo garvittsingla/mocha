@@ -8,7 +8,7 @@ use instructions::*;
 pub mod errors;
 
 
-declare_id!("D3obuYP14sxhSRMvYPXZR7U8j9nGgrTNGj8mgohYu5PG");
+declare_id!("DcniW2k5mDoDzKqzoTRxfQeTyqwQgnRWfWBXoV4GTznj");
 
 
 #[program]
