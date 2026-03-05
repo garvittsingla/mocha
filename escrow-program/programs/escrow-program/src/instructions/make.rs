@@ -1,45 +1,30 @@
 use anchor_lang::prelude::*;
 
- 
 use crate::state::escrow::Escrow;
 
-use anchor_spl::{
-    associated_token::AssociatedToken,
-    token_interface::{transfer_checked, Mint, TokenAccount, TokenInterface, TransferChecked},
-};
-
-
+use mpl_core::{instructions::TransferV1CpiBuilder, ID as CORE_PROGRAM_ID};
 
 #[derive(Accounts)]
 #[instruction(seed: u64)]
-pub struct Make<'info>{
-   #[account(mut)]
-   pub maker : Signer<'info>,
-  #[account(
-    mint::decimals = 0,
-    mint::token_program = token_program
-  )]
-   pub nft_mint : InterfaceAccount<'info,Mint>,
-   #[account(
-    mut,
-    associated_token::mint = nft_mint,
-    associated_token::authority = maker,
-    token::token_program = token_program
-   )]
-   pub maker_ata : InterfaceAccount<'info,TokenAccount>,
+pub struct Make<'info> {
+    #[account(mut)]
+    pub maker: Signer<'info>,
 
-   pub token_program : Interface<'info,TokenInterface>,
-   pub system_program : Program<'info,System>,
-  pub associated_token_program : Program<'info,AssociatedToken>,
+    #[account(mut)]
+    /// CHECK: Validated by mpl-core CPI
+    pub asset: UncheckedAccount<'info>,
 
-     #[account(
-        init,
-        payer = maker,
-        associated_token::mint = nft_mint,
-        associated_token::authority = escrow,
-        associated_token::token_program = token_program
+    /// CHECK: Validated by mpl-core CPI. May be System Program for un-collected assets.
+    pub collection: UncheckedAccount<'info>,
+
+    /// CHECK: This is the vault PDA that will become the new owner of the asset.
+    /// It doesn't need to be initialized — it's just a signing authority PDA.
+    #[account(
+        seeds = [b"vault", escrow.key().as_ref()],
+        bump,
     )]
-    pub vault: InterfaceAccount<'info, TokenAccount>,
+    pub vault: SystemAccount<'info>,
+
     #[account(
         init,
         payer = maker,
@@ -49,37 +34,49 @@ pub struct Make<'info>{
     )]
     pub escrow: Account<'info, Escrow>,
 
+    #[account(address = CORE_PROGRAM_ID)]
+    /// CHECK: This is the mpl-core program
+    pub core_program: UncheckedAccount<'info>,
 
+    pub system_program: Program<'info, System>,
 }
 
-impl<'info> Make<'info>{
-   pub fn init(&mut self,seed : u64, price : u64,bumps:&MakeBumps) -> Result<()>{
-        self.escrow.set_inner(Escrow{
+impl<'info> Make<'info> {
+    pub fn init(&mut self, seed: u64, price: u64, bumps: &MakeBumps) -> Result<()> {
+        self.escrow.set_inner(Escrow {
             seed,
-            maker : self.maker.key(),
-            mint_nft : self.nft_mint.key(),
+            maker: self.maker.key(),
+            mint_nft: self.asset.key(),
             price,
-            bump : bumps.escrow,
+            bump: bumps.escrow,
         });
-        let cpi_accounts = TransferChecked {
-            from: self.maker_ata.to_account_info(),
-            mint: self.nft_mint.to_account_info(),
-            to: self.vault.to_account_info(),
-            authority: self.maker.to_account_info(),
+
+        let collection_info = self.collection.to_account_info();
+        let collection_arg = if self.collection.key() == self.system_program.key() {
+            None
+        } else {
+            Some(&collection_info)
         };
 
-        let cpi_ctx = CpiContext::new(
-            self.token_program.to_account_info(),
-            cpi_accounts,
+        msg!(
+            "CPI TransferV1: asset={}, owner={}, new_owner={}",
+            self.asset.key(),
+            self.maker.key(),
+            self.vault.key()
         );
 
-        
-        transfer_checked(cpi_ctx, 1, 0)?;
+        // Transfer asset ownership: maker → vault PDA
+        TransferV1CpiBuilder::new(&self.core_program.to_account_info())
+            .asset(&self.asset.to_account_info())
+            .collection(collection_arg)
+            .payer(&self.maker.to_account_info())
+            .authority(None)
+            .new_owner(&self.vault.to_account_info())
+            .system_program(Some(&self.system_program.to_account_info()))
+            .invoke()?;
 
-       
+        msg!("CPI TransferV1 success!");
+
         Ok(())
-
-        
-
-   }
+    }
 }
