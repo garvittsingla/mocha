@@ -2,79 +2,66 @@ use anchor_lang::prelude::*;
 
 use crate::state::escrow::Escrow;
 
-use anchor_spl::{
-    associated_token::AssociatedToken,
-    token_interface::{
-        Mint, TokenAccount, TokenInterface, TransferChecked,transfer_checked,CloseAccount,close_account
-    }
-};
-
+use mpl_core::{instructions::TransferV1CpiBuilder, ID as CORE_PROGRAM_ID};
 
 #[derive(Accounts)]
-#[instruction(seed:u64)]
-pub struct Refund<'info>{
+#[instruction(seed: u64)]
+pub struct Refund<'info> {
     #[account(mut)]
-    pub maker : Signer<'info>,
+    pub maker: Signer<'info>,
+
+    #[account(mut)]
+    /// CHECK: Validated by mpl-core CPI
+    pub asset: UncheckedAccount<'info>,
+
+    /// CHECK: Validated by mpl-core CPI. May be System Program for un-collected assets.
+    pub collection: UncheckedAccount<'info>,
+
+    /// CHECK: Vault PDA that currently owns the asset.
+    #[account(
+        seeds = [b"vault", escrow.key().as_ref()],
+        bump,
+    )]
+    pub vault: SystemAccount<'info>,
+
     #[account(
         mut,
-        associated_token::mint = nft_mint,
-        associated_token::authority = escrow,
-        token::token_program = token_program
-    )]
-    pub vault : InterfaceAccount<'info,TokenAccount>,
-    #[account(
-        mint::decimals = 0,
-        mint::token_program = token_program
-    )]
-    pub nft_mint : InterfaceAccount<'info,Mint>,
-    #[account(
-        mut,
+        has_one = maker,
+        close = maker,
         seeds = [b"escrow", maker.key().as_ref(), seed.to_le_bytes().as_ref()],
         bump = escrow.bump,
-        close = maker
     )]
-    pub escrow : Account<'info,Escrow>,
-    #[account(
-        mut,
-        associated_token::mint = nft_mint,
-        associated_token::authority = maker,
-        token::token_program = token_program
-    )]
-    pub maker_ata : InterfaceAccount<'info,TokenAccount>,
+    pub escrow: Account<'info, Escrow>,
 
-    pub token_program : Interface<'info,TokenInterface>,
-    pub system_program : Program<'info,System>,
-    pub associated_token_program : Program<'info,AssociatedToken>
-    
+    #[account(address = CORE_PROGRAM_ID)]
+    /// CHECK: This is the mpl-core program
+    pub core_program: UncheckedAccount<'info>,
 
+    pub system_program: Program<'info, System>,
 }
-impl<'info> Refund<'info>{
-    pub fn refund(&mut self,seed : u64) -> Result<()>{
-        let cpi_accounts =TransferChecked{
-            from : self.vault.to_account_info(),
-            to : self.maker_ata.to_account_info(),
-            mint : self.nft_mint.to_account_info(),
-            authority : self.escrow.to_account_info(),
-           
+
+impl<'info> Refund<'info> {
+    pub fn refund(&mut self, bumps: &RefundBumps) -> Result<()> {
+        // Vault PDA signs to transfer asset ownership back to maker
+        let escrow_key = self.escrow.key();
+        let signer_seeds: &[&[&[u8]]] = &[&[b"vault", escrow_key.as_ref(), &[bumps.vault]]];
+
+        let collection_info = self.collection.to_account_info();
+        let collection_arg = if self.collection.key() == self.system_program.key() {
+            None
+        } else {
+            Some(&collection_info)
         };
 
-        let signer_seeds : &[&[&[u8]]] = &[&[
-            b"escrow",
-            self.maker.to_account_info().key.as_ref(),
-            &self.escrow.seed.to_le_bytes(),
-            &[self.escrow.bump],
-        ]];
-        let cpi_ctx = CpiContext::new_with_signer(self.token_program.to_account_info(),cpi_accounts,signer_seeds);
-        
-        transfer_checked(cpi_ctx, 1, 0)?;
+        TransferV1CpiBuilder::new(&self.core_program.to_account_info())
+            .asset(&self.asset.to_account_info())
+            .collection(collection_arg)
+            .payer(&self.maker.to_account_info())
+            .authority(Some(&self.vault.to_account_info()))
+            .new_owner(&self.maker.to_account_info())
+            .system_program(Some(&self.system_program.to_account_info()))
+            .invoke_signed(signer_seeds)?;
 
-        let close_accounts = CloseAccount{
-            account : self.vault.to_account_info(),
-            destination : self.maker.to_account_info(),
-            authority : self.escrow.to_account_info(),
-        };
-        let cpi_ctx = CpiContext::new_with_signer(self.token_program.to_account_info(),close_accounts,signer_seeds);
-        close_account(cpi_ctx)?;
         Ok(())
     }
 }
