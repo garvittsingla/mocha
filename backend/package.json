@@ -13,6 +13,8 @@
     "@coral-xyz/anchor": "^0.32.1",
     "@metaplex-foundation/mpl-core": "^1.7.0",
     "@solana/web3.js": "^1.98.4",
-    "axios": "^1.13.6"
+    "axios": "^1.13.6",
+    "@irys/upload": "^0.0.13",
+    "@irys/upload-solana": "^0.0.1"
   }
 }
