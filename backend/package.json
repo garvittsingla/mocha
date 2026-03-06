@@ -3,6 +3,12 @@
   "module": "index.ts",
   "type": "module",
   "private": true,
+  "scripts": {
+    "airdrop": "bun run airdropping.ts",
+    "balances": "bun run check_balances.ts",
+    "fund-irys": "bun run fund_irys.ts",
+    "test": "bun test --timeout 300000"
+  },
   "devDependencies": {
     "@types/bun": "latest"
   },

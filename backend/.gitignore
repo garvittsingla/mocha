@@ -17,6 +17,9 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 
 # dotenv environment variable files
 .env
+
+# Devnet test accounts — contains private key material, NEVER commit!
+accounts.json
 .env.development.local
 .env.test.local
 .env.production.local
