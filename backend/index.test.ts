@@ -4,11 +4,14 @@ import escrowIdl from "./escrow_program.json";
 import mintIdl from "./mint_token_mplx.json";
 import { expect, describe, it, beforeAll } from "bun:test";
 import axios from "axios";
-import { SystemProgram } from "@solana/web3.js";
+import { Connection, Keypair, SystemProgram } from "@solana/web3.js";
 import { MPL_CORE_PROGRAM_ID } from "@metaplex-foundation/mpl-core";
 import checkEligibility from "./test_helpers";
 import { Uploader } from "@irys/upload";
 import { Solana } from "@irys/upload-solana";
+import { readFileSync, existsSync } from "fs";
+import { homedir } from "os";
+import { join } from "path";
 
 const img_path1 = "./assets/elonshoecook.jpg"
 const img_path2 = "./assets/elonshoeplay.jpg"
@@ -17,37 +20,49 @@ interface ResponseType {
     message: string
 }
 
-const USE_REAL_UPLOADS = false; // Set to true for Devnet/Mainnet, false for Localnet
+const USE_REAL_UPLOADS = true; // Devnet — real Irys uploads enabled
+
+// Creator is the Solana CLI wallet
+const creatorSecret: number[] = JSON.parse(
+  readFileSync(join(homedir(), ".config", "solana", "id.json"), "utf-8")
+);
+const creator = Keypair.fromSecretKey(Uint8Array.from(creatorSecret));
+
+// Taker, collection, mintToken are loaded from accounts.json (created by airdropping.ts)
+const ACCOUNTS_FILE = join(import.meta.dir, "accounts.json");
+if (!existsSync(ACCOUNTS_FILE)) {
+  throw new Error(
+    "accounts.json not found — run `bun run airdropping.ts` first to bootstrap devnet accounts"
+  );
+}
+const stored: Record<string, number[]> = JSON.parse(readFileSync(ACCOUNTS_FILE, "utf-8"));
+const taker      = Keypair.fromSecretKey(Uint8Array.from(stored["taker"]!));
+const collection = Keypair.fromSecretKey(Uint8Array.from(stored["collection"]!));
+let mintToken    = Keypair.fromSecretKey(Uint8Array.from(stored["mintToken"]!));
+
+const DEVNET_RPC = "https://api.devnet.solana.com";
 
 describe("deployed programs", () => {
-  const provider = anchor.AnchorProvider.local();
+  const connection = new Connection(DEVNET_RPC, "confirmed");
+  const wallet = new anchor.Wallet(creator);
+  const provider = new anchor.AnchorProvider(connection, wallet, {
+    commitment: "confirmed",
+  });
   anchor.setProvider(provider);
 
   const escrowProgram = new Program(escrowIdl as Idl, provider);
   const mintProgram = new Program(mintIdl as Idl, provider);
-
-  const creator = anchor.web3.Keypair.generate();
-  const taker = anchor.web3.Keypair.generate();
-  const collection = anchor.web3.Keypair.generate();
-
-  let mintToken = anchor.web3.Keypair.generate();
 
   let programDataAccount: anchor.web3.PublicKey;
 
   beforeAll(async () => {
     console.log("Escrow Program:", escrowProgram.programId.toBase58());
     console.log("Mint Program:", mintProgram.programId.toBase58());
+    console.log("Creator (CLI wallet):", creator.publicKey.toBase58());
+    console.log("Taker:", taker.publicKey.toBase58());
 
-    await provider.connection.requestAirdrop(
-      creator.publicKey,
-      10 * anchor.web3.LAMPORTS_PER_SOL
-    );
-
-    await provider.connection.requestAirdrop(
-      taker.publicKey,
-      10 * anchor.web3.LAMPORTS_PER_SOL
-    );
-
+    // No airdrop needed — creator is pre-funded manually;
+    // taker is funded by airdropping.ts
     await new Promise((resolve) => setTimeout(resolve, 1000));
 
     const programAccountInfo =
@@ -56,6 +71,12 @@ describe("deployed programs", () => {
       );
 
     const parsed = (programAccountInfo.value?.data as any)?.parsed;
+    if (!parsed?.info?.programData) {
+      throw new Error(
+        `Mint program (${mintProgram.programId.toBase58()}) is not deployed on devnet.\n` +
+        `Run: solana program deploy ./mint_program.so --program-id mint_program-keypair.json --url devnet --with-compute-unit-price 5000`
+      );
+    }
     programDataAccount = new anchor.web3.PublicKey(
       parsed.info.programData
     );
@@ -86,35 +107,94 @@ describe("deployed programs", () => {
     let collectionUri: string | undefined;
 
     if (USE_REAL_UPLOADS) {
-      // 2. Upload NFT image and collection image to Irys
+      // Get irys Uploader for devnet.
       const getIrysUploader = async () => {
-        return await Uploader(Solana).withWallet(creator.secretKey);
+        return await Uploader(Solana)
+          .devnet()
+          .withRpc(DEVNET_RPC)
+          .withWallet(creator.secretKey);
       };
       const irys = await getIrysUploader();
 
-      // Upload NFT image (img_path1 passed eligibility check)
+      let nftImageUrl: string | undefined;
+      let collectionImageUrl: string | undefined;
+
       try {
         const nftFile = Bun.file(img_path1);
-        const nftTags = [{ name: "Content-Type", value: nftFile.type }];
-        const nftResponse = await irys.uploadFile(img_path1, { tags: nftTags });
-        nfturi = `https://gateway.irys.xyz/${nftResponse.id}`;
-        console.log(`NFT image uploaded ==> ${nfturi}`);
+        const nftResponse = await irys.uploadFile(img_path1, {
+          tags: [{ name: "Content-Type", value: nftFile.type }],
+        });
+        nftImageUrl = `https://gateway.irys.xyz/${nftResponse.id}`;
+        console.log(`NFT image uploaded => ${nftImageUrl}`);
       } catch (e) {
         console.log("Error uploading NFT image:", e);
       }
 
-      // Upload collection image (img_path2 used as the collection cover)
       try {
         const collectionFile = Bun.file(img_path2);
-        const collectionTags = [{ name: "Content-Type", value: collectionFile.type }];
-        const collectionResponse = await irys.uploadFile(img_path2, { tags: collectionTags });
-        collectionUri = `https://gateway.irys.xyz/${collectionResponse.id}`;
-        console.log(`Collection image uploaded ==> ${collectionUri}`);
+        const collectionResponse = await irys.uploadFile(img_path2, {
+          tags: [{ name: "Content-Type", value: collectionFile.type }],
+        });
+        collectionImageUrl = `https://gateway.irys.xyz/${collectionResponse.id}`;
+        console.log(`Collection image uploaded => ${collectionImageUrl}`);
       } catch (e) {
         console.log("Error uploading collection image:", e);
       }
+
+      // Build & upload Metaplex-standard metadata JSONs
+      if (nftImageUrl) {
+        try {
+          const nftMetadata = {
+            name: "Elon Shoe Cooking",
+            symbol: "Elon",
+            description: "Elon cooking some supper in his shoe",
+            image: nftImageUrl,
+            attributes: [],
+            properties: {
+              files: [{ uri: nftImageUrl, type: Bun.file(img_path1).type }],
+              category: "image",
+              creators: [{ address: creator.publicKey.toBase58(), share: 100 }],
+            },
+            creators: [{ address: creator.publicKey.toBase58(), share: 100, verified: false }],
+          };
+          const nftMetaBytes = Buffer.from(JSON.stringify(nftMetadata));
+          const nftMetaResponse = await irys.upload(nftMetaBytes, {
+            tags: [{ name: "Content-Type", value: "application/json" }],
+          });
+          nfturi = `https://gateway.irys.xyz/${nftMetaResponse.id}`;
+          console.log(`NFT metadata JSON uploaded => ${nfturi}`);
+        } catch (e) {
+          console.log("Error uploading NFT metadata JSON:", e);
+        }
+      }
+
+      if (collectionImageUrl) {
+        try {
+          const collectionMetadata = {
+            name: "Elon Collection",
+            symbol: "",
+            description: "Collection of Elon shoe moments",
+            image: collectionImageUrl,
+            attributes: [],
+            properties: {
+              files: [{ uri: collectionImageUrl, type: Bun.file(img_path2).type }],
+              category: "image",
+              creators: [{ address: creator.publicKey.toBase58(), share: 100 }],
+            },
+            creators: [{ address: creator.publicKey.toBase58(), share: 100, verified: false }],
+          };
+          const collectionMetaBytes = Buffer.from(JSON.stringify(collectionMetadata));
+          const collectionMetaResponse = await irys.upload(collectionMetaBytes, {
+            tags: [{ name: "Content-Type", value: "application/json" }],
+          });
+          collectionUri = `https://gateway.irys.xyz/${collectionMetaResponse.id}`;
+          console.log(`Collection metadata JSON uploaded => ${collectionUri}`);
+        } catch (e) {
+          console.log("Error uploading collection metadata JSON:", e);
+        }
+      }
     } else {
-      console.log("Localnet mode: Using dummy URIs for NFT and Collection.");
+      console.log("Devnet mode (USE_REAL_UPLOADS=false): Using dummy URIs for NFT and Collection.");
       nfturi = "https://example.com/mock-nft.json";
       collectionUri = "https://example.com/mock-collection.json";
     }
@@ -219,11 +299,7 @@ describe("deployed programs", () => {
     console.log("Mint Token PK:", mintToken.publicKey.toBase58());
     console.log("Taker PK:", taker.publicKey.toBase58());
 
-    // ─────────────────────────────────────────────────────────────────
-    // ESCROW FLOW: creator lists the NFT → taker buys it
-    // ─────────────────────────────────────────────────────────────────
-
-    // 7. Derive escrow PDAs
+    // Derive escrow PDAs
     // seed is an arbitrary u64 that uniquely identifies this listing
     const escrowSeed = new anchor.BN(42);
     const nftPrice = new anchor.BN(0.1 * anchor.web3.LAMPORTS_PER_SOL); // 0.1 SOL
@@ -245,8 +321,8 @@ describe("deployed programs", () => {
     console.log("Escrow PDA:", escrowPdaHappy.toBase58());
     console.log("Vault PDA:", vaultPdaHappy.toBase58());
 
-    // 7.5. Thaw the NFT before listing — mintNft applies a FreezeDelegate plugin
-    //      so only the collectionAuthority PDA can move it. We must thaw first.
+    //Thaw the NFT before listing, mintNft applies a FreezeDelegate plugin
+    //so only the collectionAuthority PDA can move it. 
     try {
       //@ts-ignore
       const thawSig = await mintProgram.methods
@@ -268,8 +344,8 @@ describe("deployed programs", () => {
       return;
     }
 
-    // 8. Creator calls `make` — transfers NFT ownership to vault PDA
-    //    and stores price + metadata in the escrow account
+    //Creator calls make and transfers NFT ownership to vault PDA
+    //and stores price + metadata in the escrow account
     if (!escrowProgram.methods.make) {
       console.log("make not found");
       return;
@@ -303,14 +379,14 @@ describe("deployed programs", () => {
       `Escrow state — maker: ${escrowAccount.maker.toBase58()}, price: ${escrowAccount.price.toNumber()} lamports`
     );
 
-    // 9. Capture balances before the take so we can assert SOL flow
+    //Capture balances before the take so we can assert SOL flow
     const takerBalanceBefore = await provider.connection.getBalance(taker.publicKey);
     const makerBalanceBefore = await provider.connection.getBalance(creator.publicKey);
     console.log(`Taker balance before take: ${takerBalanceBefore / anchor.web3.LAMPORTS_PER_SOL} SOL`);
     console.log(`Maker balance before take: ${makerBalanceBefore / anchor.web3.LAMPORTS_PER_SOL} SOL`);
 
-    // 10. Taker calls `take` — pays SOL to maker, receives NFT from vault
-    //     The escrow account is closed and rent returned to maker
+    //Taker calls take and pays SOL to maker, receives NFT from vault
+    //The escrow account is closed and rent returned to maker
     if (!escrowProgram.methods.take) {
       console.log("take not found");
       return;
@@ -334,15 +410,13 @@ describe("deployed programs", () => {
     await provider.connection.confirmTransaction(takeSig, "confirmed");
     console.log("NFT purchased by taker via escrow! sig:", takeSig);
 
-    // 11. Escrow account should be closed (lamports returned to maker)
+    //Escrow account should be closed and lamports will be returned to the maker.
     const escrowInfoAfterTake = await provider.connection.getAccountInfo(escrowPdaHappy);
     expect(escrowInfoAfterTake).toBeNull();
 
-    // 12. Assert SOL moved from taker to maker
     const takerBalanceAfter = await provider.connection.getBalance(taker.publicKey);
     const makerBalanceAfter = await provider.connection.getBalance(creator.publicKey);
 
-    // Taker paid at least the NFT price (plus tx fees on top)
     expect(takerBalanceBefore - takerBalanceAfter).toBeGreaterThanOrEqual(nftPrice.toNumber());
     // Maker received at least the NFT price
     expect(makerBalanceAfter - makerBalanceBefore).toBeGreaterThanOrEqual(nftPrice.toNumber());

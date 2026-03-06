@@ -7,7 +7,7 @@ mod state;
 use instructions::*;
 // use state::*;
 
-declare_id!("HprKADnzCJ6fCHbk3uATgZymkio83w1qRuJWaK9LYtmc");
+declare_id!("3U9SD3UEX34UT67w52eEazQk4kSK36eQ75ewpkfky7B7");
 
 #[program]
 pub mod mint_token_mplx {
